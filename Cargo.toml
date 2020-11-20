@@ -1,5 +1,5 @@
 [package]
-name = "arduino"
+name = "arduino-uno-thermometer"
 version = "0.1.0"
 authors = ["Yuanyuan2100 <yuanyuan2100@gmail.com>"]
 edition = "2018"
