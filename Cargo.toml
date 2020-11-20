@@ -11,7 +11,7 @@ nb = "0.1.2"
 numtoa = "0.2.3"
 
 [dependencies.heapless]
-path = "../heapless"
+path = "../heapless" # Added match target "avr-atmega328p" to heapless's build.rs, so have to use it locally.
 
 [dependencies.arduino-uno]
 git = "https://github.com/Rahix/avr-hal.git"

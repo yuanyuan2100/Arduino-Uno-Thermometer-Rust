@@ -47,17 +47,16 @@ fn main() -> ! {
         let temp_dec = (reading as i16 * 5) % 10;
 
         let mut buf = [0u8; 20];    
-        let mut s_int: String<U8> = String::new();
-        let mut s_dec: String<U8> = String::new();
- 
-        s_int.push_str(temp_int.numtoa_str(10, &mut buf)).unwrap();
-        s_dec.push_str(temp_dec.numtoa_str(10, &mut buf)).unwrap();
         
-        lcd.write_str("T: ", &mut delay).unwrap();
-        lcd.write_str(&s_int, &mut delay).unwrap();
-        lcd.write_str(".", &mut delay).unwrap();
-        lcd.write_str(&s_dec, &mut delay).unwrap();
-        lcd.write_str(" C", &mut delay).unwrap();
+        let mut display: String<U20> = String::new();
+
+        display.push_str("T: ").unwrap();
+        display.push_str(temp_int.numtoa_str(10, &mut buf)).unwrap();
+        display.push_str(".").unwrap();
+        display.push_str(temp_dec.numtoa_str(10, &mut buf)).unwrap();
+        display.push_str(" C").unwrap();
+
+        lcd.write_str(&display, &mut delay).unwrap();
 
         led.toggle().void_unwrap();
 
