@@ -1,0 +1,32 @@
+[package]
+name = "arduino"
+version = "0.1.0"
+authors = ["Yuanyuan2100 <yuanyuan2100@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+panic-halt = "0.2.0"
+hd44780-driver = {git = "https://github.com/JohnDoneth/hd44780-driver"}
+nb = "0.1.2"
+numtoa = "0.2.3"
+
+[dependencies.heapless]
+path = "../heapless"
+
+[dependencies.arduino-uno]
+git = "https://github.com/Rahix/avr-hal.git"
+
+[dependencies.avr-hal-generic]
+git = "https://github.com/Rahix/avr-hal"
+
+[profile.dev]
+panic = "abort"
+lto = true
+opt-level = "s"
+
+[profile.release]
+panic = "abort"
+codegen-units = 1
+debug = true
+lto = true
+opt-level = "s"
