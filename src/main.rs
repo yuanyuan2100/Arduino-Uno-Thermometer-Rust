@@ -1,5 +1,6 @@
 #![no_std]
 #![no_main]
+#![allow(arithmetic_overflow)]
 
 use arduino_uno::prelude::*;
 use arduino_uno::{adc, Delay};
@@ -48,18 +49,26 @@ fn main() -> ! {
 
         // u16 overflowed. i32 seems not work. So it has to be 25000 - (75000 - 65536)
         // The original formula should be (reading * 488 - 75000) + 25000
+
         let temp = (reading as i16 * 488 + 15536) / 10; 
                                                  
-        let temp_int = temp / 100;
-        let temp_dec = temp % 100;
+        let temp_int = (temp / 100).abs();
+        let temp_dec = (temp % 100).abs();
 
-        ufmt::uwrite!(&mut serial, "Temp: {}.{} C \n\r", temp_int, temp_dec).void_unwrap();
+        if reading < 103 {
+            ufmt::uwrite!(&mut serial, "Temp: -{}.{} C \n\r", temp_int, temp_dec).void_unwrap();
+        } else {
+            ufmt::uwrite!(&mut serial, "Temp: {}.{} C \n\r", temp_int, temp_dec).void_unwrap();
+        }
 
         let mut buf = [0u8; 20];    
         
         let mut display: String<U20> = String::new();
 
         display.push_str("T: ").unwrap();
+        if reading < 103 {
+            display.push_str("-").unwrap();
+        }
         display.push_str(temp_int.numtoa_str(10, &mut buf)).unwrap();
         display.push_str(".").unwrap();
         display.push_str(temp_dec.numtoa_str(10, &mut buf)).unwrap();
