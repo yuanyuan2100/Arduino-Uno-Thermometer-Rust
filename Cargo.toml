@@ -9,6 +9,7 @@ panic-halt = "0.2.0"
 hd44780-driver = {git = "https://github.com/JohnDoneth/hd44780-driver"}
 nb = "0.1.2"
 numtoa = "0.2.3"
+ufmt = "0.1.0"
 
 [dependencies.heapless]
 path = "../heapless" # Added match target "avr-atmega328p" to heapless's build.rs, so have to use it locally.

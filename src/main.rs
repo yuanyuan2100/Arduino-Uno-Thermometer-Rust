@@ -17,6 +17,9 @@ fn main() -> ! {
 
     let mut pins = arduino_uno::Pins::new(dp.PORTB, dp.PORTC, dp.PORTD);
 
+    let mut serial =
+        arduino_uno::Serial::new(dp.USART0, pins.d0, pins.d1.into_output(&mut pins.ddr), 9600.into_baudrate());
+
     let mut adc = adc::Adc::new(dp.ADC, Default::default());
     let mut a0 = pins.a0.into_analog_input(&mut adc);
 
@@ -43,8 +46,14 @@ fn main() -> ! {
     loop {
         let reading: u16 = nb::block!(adc.read(&mut a0)).void_unwrap();
 
-        let temp_int = (((reading as i16 * 5) - 750) / 10 ) + 25;
-        let temp_dec = (reading as i16 * 5) % 10;
+        // u16 overflowed. i32 seems not work. So it has to be 25000 - (75000 - 65536)
+        // The original formula should be (reading * 488 - 75000) + 25000
+        let temp = (reading as i16 * 488 + 15536) / 10; 
+                                                 
+        let temp_int = temp / 100;
+        let temp_dec = temp % 100;
+
+        ufmt::uwrite!(&mut serial, "Temp: {}.{} C \n\r", temp_int, temp_dec).void_unwrap();
 
         let mut buf = [0u8; 20];    
         
