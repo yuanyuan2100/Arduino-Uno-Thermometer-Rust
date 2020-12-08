@@ -82,12 +82,33 @@ fn main() -> ! {
         let hum_dec: u16 = hum % 100;
 
         // Output to serial port.
-        if temp < 0 {
-            ufmt::uwriteln!(&mut serial, "temp_MSB: {}, temp_LSB: {}, Temperature: -{}.{} C.\r\n", temp_msb, temp_lsb, temp_int, temp_dec).void_unwrap();
+        // Add "-" if temperature < 0. Add 1 digit "0" if the decimal is 01, 02, 03, etc.
+        if temp < 0 { 
+            if temp_dec < 10 {
+                ufmt::uwriteln!(&mut serial, "temp_MSB: {}, temp_LSB: {}, Temperature: -{}.0{} C.\r\n", 
+                    temp_msb, temp_lsb, temp_int, temp_dec).void_unwrap();
+            } else {
+                ufmt::uwriteln!(&mut serial, "temp_MSB: {}, temp_LSB: {}, Temperature: -{}.{} C.\r\n", 
+                    temp_msb, temp_lsb, temp_int, temp_dec).void_unwrap();
+            }          
         } else {
-            ufmt::uwriteln!(&mut serial, "temp_MSB: {}, temp_LSB: {}, Temperature: {}.{} C.\r\n", temp_msb, temp_lsb, temp_int, temp_dec).void_unwrap();
-        }    
-        ufmt::uwriteln!(&mut serial, "hum_MSB: {}, hum_LSB: {}, Humidity: {}.{} %RH.\r\n", hum_msb, hum_lsb, hum_int, hum_dec).void_unwrap();
+            if temp_dec < 10 {
+                ufmt::uwriteln!(&mut serial, "temp_MSB: {}, temp_LSB: {}, Temperature: {}.0{} C.\r\n", 
+                    temp_msb, temp_lsb, temp_int, temp_dec).void_unwrap();
+            } else {
+                ufmt::uwriteln!(&mut serial, "temp_MSB: {}, temp_LSB: {}, Temperature: {}.{} C.\r\n", 
+                    temp_msb, temp_lsb, temp_int, temp_dec).void_unwrap();
+            }
+            
+        }
+        
+        if hum_dec < 10 {
+            ufmt::uwriteln!(&mut serial, "hum_MSB: {}, hum_LSB: {}, Humidity: {}.0{} %RH.\r\n", 
+                hum_msb, hum_lsb, hum_int, hum_dec).void_unwrap();
+        } else {
+            ufmt::uwriteln!(&mut serial, "hum_MSB: {}, hum_LSB: {}, Humidity: {}.{} %RH.\r\n", 
+                hum_msb, hum_lsb, hum_int, hum_dec).void_unwrap();
+        }
 
         // Display on LCD.
         let mut line_1 = [0u8; 20];
