@@ -73,16 +73,20 @@ fn main() -> ! {
 
         let s_t: u32 = ((temp_msb as u16) * 256 + temp_lsb as u16).into();  // 16-bits temperature data.
         let temp: i16 = ((((s_t as i32) * 17500) >> 16) - 4500).try_into().unwrap(); // Temperature * 100 to get 2 digits decimal. SHT3x datasheet Page 13.
-        let temp_int: i16 = temp / 100;  // Integer part of temperature.
-        let temp_dec: i16 = temp % 100;  // Decimal part of temperature.
+        let temp_int: u16 = ((temp / 100).abs()).try_into().unwrap();  // Integer part of temperature.
+        let temp_dec: u16 = ((temp % 100).abs()).try_into().unwrap();  // Decimal part of temperature.
 
         let s_rh: u32 = ((hum_msb as u16) * 256 + hum_lsb as u16).into();  // 16-bits humidity data.
-        let hum: i16 = (((s_rh as i32) * 10000) >> 16).try_into().unwrap();
-        let hum_int: i16 = hum / 100;
-        let hum_dec: i16 = hum % 100;
+        let hum: u16 = (((s_rh as i32) * 10000) >> 16).try_into().unwrap();
+        let hum_int: u16 = hum / 100;
+        let hum_dec: u16 = hum % 100;
 
         // Output to serial port.
-        ufmt::uwriteln!(&mut serial, "temp_MSB: {}, temp_LSB: {} Temperature: {}.{} C.\r\n", temp_msb, temp_lsb, temp_int, temp_dec).void_unwrap();
+        if temp < 0 {
+            ufmt::uwriteln!(&mut serial, "temp_MSB: {}, temp_LSB: {}, Temperature: -{}.{} C.\r\n", temp_msb, temp_lsb, temp_int, temp_dec).void_unwrap();
+        } else {
+            ufmt::uwriteln!(&mut serial, "temp_MSB: {}, temp_LSB: {}, Temperature: {}.{} C.\r\n", temp_msb, temp_lsb, temp_int, temp_dec).void_unwrap();
+        }    
         ufmt::uwriteln!(&mut serial, "hum_MSB: {}, hum_LSB: {}, Humidity: {}.{} %RH.\r\n", hum_msb, hum_lsb, hum_int, hum_dec).void_unwrap();
 
         // Display on LCD.
@@ -93,14 +97,29 @@ fn main() -> ! {
         let mut display_line_2: String<U20> = String::new();
 
         display_line_1.push_str("T: ").unwrap();
+
+        if temp < 0 {
+            display_line_1.push_str("-").unwrap();
+        }
+
         display_line_1.push_str(temp_int.numtoa_str(10, &mut line_1)).unwrap();
         display_line_1.push_str(".").unwrap();
+
+        if temp_dec < 10 {
+            display_line_1.push_str("0").unwrap();
+        }
+
         display_line_1.push_str(temp_dec.numtoa_str(10, &mut line_1)).unwrap();
         display_line_1.push_str(" C").unwrap();
 
         display_line_2.push_str("H: ").unwrap();
         display_line_2.push_str(hum_int.numtoa_str(10, &mut line_2)).unwrap();
         display_line_2.push_str(".").unwrap();
+
+        if hum_dec < 10 {
+            display_line_2.push_str("0").unwrap();
+        }
+
         display_line_2.push_str(hum_dec.numtoa_str(10, &mut line_2)).unwrap();
         display_line_2.push_str(" %RH").unwrap();
 
