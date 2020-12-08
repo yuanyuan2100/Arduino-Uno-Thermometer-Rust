@@ -77,13 +77,14 @@ fn main() -> ! {
         let temp_dec: u16 = ((temp % 100).abs()).try_into().unwrap();  // Decimal part of temperature.
 
         let s_rh: u32 = ((hum_msb as u16) * 256 + hum_lsb as u16).into();  // 16-bits humidity data.
-        let hum: u16 = (((s_rh as i32) * 10000) >> 16).try_into().unwrap();
+        let hum: u16 = ((s_rh * 10000) >> 16).try_into().unwrap();
         let hum_int: u16 = hum / 100;
         let hum_dec: u16 = hum % 100;
 
-        // Output to serial port.
         // Add "-" if temperature < 0. 
         // Add 1 digit "0" if the decimal is 01, 02, 03, etc.
+        
+        // Output to serial port.
         if temp < 0 { 
             if temp_dec < 10 {
                 ufmt::uwriteln!(&mut serial, "temp_MSB: {}, temp_LSB: {}, Temperature: -{}.0{} C.\r\n", 
