@@ -82,7 +82,8 @@ fn main() -> ! {
         let hum_dec: u16 = hum % 100;
 
         // Output to serial port.
-        // Add "-" if temperature < 0. Add 1 digit "0" if the decimal is 01, 02, 03, etc.
+        // Add "-" if temperature < 0. 
+        // Add 1 digit "0" if the decimal is 01, 02, 03, etc.
         if temp < 0 { 
             if temp_dec < 10 {
                 ufmt::uwriteln!(&mut serial, "temp_MSB: {}, temp_LSB: {}, Temperature: -{}.0{} C.\r\n", 
