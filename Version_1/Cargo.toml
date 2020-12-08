@@ -14,13 +14,11 @@ ufmt = "0.1.0"
 [dependencies.heapless]
 path = "../heapless" # Added match target "avr-atmega328p" to heapless's build.rs, so have to use it locally.
 
-[dependencies.arduino-uno] # Set i2c functions to pub.
-git = "https://github.com/yuanyuan2100/avr-hal.git"
-rev = "d3a8352fb65d23a46044d2d844006d7cd7a73576"
+[dependencies.arduino-uno]
+git = "https://github.com/Rahix/avr-hal.git"
 
 [dependencies.avr-hal-generic]
-git = "https://github.com/yuanyuan2100/avr-hal.git"
-rev = "d3a8352fb65d23a46044d2d844006d7cd7a73576"
+git = "https://github.com/Rahix/avr-hal"
 
 [profile.dev]
 panic = "abort"

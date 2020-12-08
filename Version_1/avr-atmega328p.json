@@ -11,8 +11,6 @@
   "linker-flavor": "gcc",
   "linker-is-gnu": true,
   "llvm-target": "avr-unknown-unknown",
-  "max-atomic-width": 8,
-  "no-default-libraries": false,
   "os": "unknown",
   "no-builtins": false,
   "no-compiler-rt": false,

@@ -3,7 +3,7 @@
 [[package]]
 name = "arduino-uno"
 version = "0.1.0"
-source = "git+https://github.com/Rahix/avr-hal.git#4dd007492703a957afa0129db51e607b21dfccb2"
+source = "git+https://github.com/yuanyuan2100/avr-hal.git?rev=d3a8352fb65d23a46044d2d844006d7cd7a73576#d3a8352fb65d23a46044d2d844006d7cd7a73576"
 dependencies = [
  "atmega328p-hal",
  "avr-hal-generic",
@@ -38,7 +38,7 @@ dependencies = [
 [[package]]
 name = "atmega328p-hal"
 version = "0.1.0"
-source = "git+https://github.com/Rahix/avr-hal.git#4dd007492703a957afa0129db51e607b21dfccb2"
+source = "git+https://github.com/yuanyuan2100/avr-hal.git?rev=d3a8352fb65d23a46044d2d844006d7cd7a73576#d3a8352fb65d23a46044d2d844006d7cd7a73576"
 dependencies = [
  "avr-device",
  "avr-hal-generic",
@@ -70,7 +70,7 @@ dependencies = [
 [[package]]
 name = "avr-hal-generic"
 version = "0.1.0"
-source = "git+https://github.com/Rahix/avr-hal.git#4dd007492703a957afa0129db51e607b21dfccb2"
+source = "git+https://github.com/yuanyuan2100/avr-hal.git?rev=d3a8352fb65d23a46044d2d844006d7cd7a73576#d3a8352fb65d23a46044d2d844006d7cd7a73576"
 dependencies = [
  "avr-device",
  "cfg-if",

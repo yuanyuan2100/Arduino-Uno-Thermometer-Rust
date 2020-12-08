@@ -1,86 +1,115 @@
 #![no_std]
 #![no_main]
-#![allow(arithmetic_overflow)]
 
-use arduino_uno::prelude::*;
-use arduino_uno::{adc, Delay};
-use hd44780_driver::HD44780;
-use hd44780_driver::{Cursor::*, CursorBlink};
+use arduino_uno::{Delay, prelude::*};
+use arduino_uno::hal::i2c::Direction::Write;
+use hd44780_driver::{HD44780, Cursor::*, CursorBlink};
+
+use core::convert::TryInto;
+use heapless::{String, consts::*};
+use numtoa::NumToA;
 use panic_halt as _;
 
-use heapless::String;
-use heapless::consts::*;
-use numtoa::NumToA;
+const SHT30_ADDRESS: u8 = 0x44;  // SHT3x datasheet Page 9, Table 7.
+const MEASURE_PERIODIC: [u8; 2] = [0x20, 0x32];   // Periodic Data Acquisition Mode. 0.5 mps. SHT3x datasheet Page 10, Table 9.
+const READOUT: [u8; 2] = [0xE0, 0x00]; // Periodic Data Acquisition Mode. Readout. SHT3x datasheet Page 11, Table 10.
 
 #[arduino_uno::entry]
 fn main() -> ! {
+    // Initialize board and pins
     let dp = arduino_uno::Peripherals::take().unwrap();
 
     let mut pins = arduino_uno::Pins::new(dp.PORTB, dp.PORTC, dp.PORTD);
+    let mut serial = arduino_uno::Serial::new(
+        dp.USART0,
+        pins.d0,
+        pins.d1.into_output(&mut pins.ddr),
+        57600.into_baudrate(),
+    );
 
-    let mut serial =
-        arduino_uno::Serial::new(dp.USART0, pins.d0, pins.d1.into_output(&mut pins.ddr), 9600.into_baudrate());
+    // Initialize i2c
+    let mut i2c = arduino_uno::I2cMaster::new(
+        dp.TWI,
+        pins.a4.into_pull_up_input(&mut pins.ddr),  // * SDA
+        pins.a5.into_pull_up_input(&mut pins.ddr),  // SCL
+        50000,
+    );
 
-    let mut adc = adc::Adc::new(dp.ADC, Default::default());
-    let mut a0 = pins.a0.into_analog_input(&mut adc);
+    i2c.start(SHT30_ADDRESS, Write).unwrap();  // Initialize SHT30 sensor.
+    i2c.write(SHT30_ADDRESS, &MEASURE_PERIODIC).unwrap();  // Set measure mode.
 
+    // Initialzie LCD. 
     let mut delay = Delay::new();
 
     let mut lcd = HD44780::new_4bit(
-        pins.d12.into_output(&mut pins.ddr), // Register Select pin
-        pins.d11.into_output(&mut pins.ddr), // Enable pin
-        pins.d2.into_output(&mut pins.ddr),  // d4
-        pins.d3.into_output(&mut pins.ddr),  // d5
-        pins.d4.into_output(&mut pins.ddr),  // d6
-        pins.d5.into_output(&mut pins.ddr),  // d7
+        pins.d8.into_output(&mut pins.ddr), // Register Select pin
+        pins.d9.into_output(&mut pins.ddr), // Enable pin
+        pins.d4.into_output(&mut pins.ddr),  // d4
+        pins.d5.into_output(&mut pins.ddr),  // d5
+        pins.d6.into_output(&mut pins.ddr),  // d6
+        pins.d7.into_output(&mut pins.ddr),  // d7
         &mut delay,
     )
     .unwrap();
 
     lcd.reset(&mut delay).unwrap();
-    lcd.clear(&mut delay).unwrap();
     lcd.set_cursor_visibility(Invisible, &mut delay).unwrap();
     lcd.set_cursor_blink(CursorBlink::Off, &mut delay).unwrap();
 
-    let mut led = pins.d13.into_output(&mut pins.ddr);
-    
+    let mut led = pins.d13.into_output(&mut pins.ddr); // Blinking LED.
+
     loop {
-        let reading: u16 = nb::block!(adc.read(&mut a0)).void_unwrap();
 
-        // u16 overflowed. i32 seems not work. So it has to be 25000 - (75000 - 65536)
-        // The original formula should be (reading * 488 - 75000) + 25000
-
-        let temp = (reading as i16 * 488 + 15536) / 10; 
-                                                 
-        let temp_int = (temp / 100).abs();
-        let temp_dec = (temp % 100).abs();
-
-        if reading < 103 {
-            ufmt::uwrite!(&mut serial, "Temp: -{}.{} C \n\r", temp_int, temp_dec).void_unwrap();
-        } else {
-            ufmt::uwrite!(&mut serial, "Temp: {}.{} C \n\r", temp_int, temp_dec).void_unwrap();
-        }
-
-        let mut buf = [0u8; 20];    
+        led.toggle().void_unwrap();  // Blinking LED.
         
-        let mut display: String<U20> = String::new();
+        // Read measurement results. SHT3x datasheet Page 10, Table 9.
+        let mut buffer = [0u8; 6];
+        i2c.write_read(SHT30_ADDRESS, &READOUT, &mut buffer).unwrap();
 
-        display.push_str("T: ").unwrap();
-        if reading < 103 {
-            display.push_str("-").unwrap();
-        }
-        display.push_str(temp_int.numtoa_str(10, &mut buf)).unwrap();
-        display.push_str(".").unwrap();
-        display.push_str(temp_dec.numtoa_str(10, &mut buf)).unwrap();
-        display.push_str(" C").unwrap();
+        let temp_msb = buffer[0];  // Temperature MSB
+        let temp_lsb = buffer[1];  // Temperature LSB
+        let hum_msb = buffer[3];  // Humidity MSB
+        let hum_lsb = buffer[4];  // Humidity LSB
 
-        lcd.write_str(&display, &mut delay).unwrap();
+        let s_t: u32 = ((temp_msb as u16) * 256 + temp_lsb as u16).into();  // 16-bits temperature data.
+        let temp: i16 = ((((s_t as i32) * 17500) >> 16) - 4500).try_into().unwrap(); // Temperature * 100 to get 2 digits decimal. SHT3x datasheet Page 13.
+        let temp_int: i16 = temp / 100;  // Integer part of temperature.
+        let temp_dec: i16 = temp % 100;  // Decimal part of temperature.
 
-        led.toggle().void_unwrap();
+        let s_rh: u32 = ((hum_msb as u16) * 256 + hum_lsb as u16).into();  // 16-bits humidity data.
+        let hum: i16 = (((s_rh as i32) * 10000) >> 16).try_into().unwrap();
+        let hum_int: i16 = hum / 100;
+        let hum_dec: i16 = hum % 100;
 
-        arduino_uno::delay_ms(2000);
+        // Output to serial port.
+        ufmt::uwriteln!(&mut serial, "temp_MSB: {}, temp_LSB: {} Temperature: {}.{} C.\r\n", temp_msb, temp_lsb, temp_int, temp_dec).void_unwrap();
+        ufmt::uwriteln!(&mut serial, "hum_MSB: {}, hum_LSB: {}, Humidity: {}.{} %RH.\r\n", hum_msb, hum_lsb, hum_int, hum_dec).void_unwrap();
+
+        // Display on LCD.
+        let mut line_1 = [0u8; 20];
+        let mut line_2 = [0u8; 20];       
+        
+        let mut display_line_1: String<U20> = String::new();
+        let mut display_line_2: String<U20> = String::new();
+
+        display_line_1.push_str("T: ").unwrap();
+        display_line_1.push_str(temp_int.numtoa_str(10, &mut line_1)).unwrap();
+        display_line_1.push_str(".").unwrap();
+        display_line_1.push_str(temp_dec.numtoa_str(10, &mut line_1)).unwrap();
+        display_line_1.push_str(" C").unwrap();
+
+        display_line_2.push_str("H: ").unwrap();
+        display_line_2.push_str(hum_int.numtoa_str(10, &mut line_2)).unwrap();
+        display_line_2.push_str(".").unwrap();
+        display_line_2.push_str(hum_dec.numtoa_str(10, &mut line_2)).unwrap();
+        display_line_2.push_str(" %RH").unwrap();
+
+        lcd.write_str(&display_line_1, &mut delay).unwrap();
+        lcd.set_cursor_pos(40, &mut delay).unwrap();  // Go to line 2.
+        lcd.write_str(&display_line_2, &mut delay).unwrap();
+
+        arduino_uno::delay_ms(4000);
 
         lcd.clear(&mut delay).unwrap();
-
     }
 }
