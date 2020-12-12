@@ -7,12 +7,12 @@ edition = "2018"
 [dependencies]
 panic-halt = "0.2.0"
 hd44780-driver = {git = "https://github.com/JohnDoneth/hd44780-driver"}
-nb = "0.1.2"
 numtoa = "0.2.3"
 ufmt = "0.1.0"
 
 [dependencies.heapless]
-path = "../heapless" # Added match target "avr-atmega328p" to heapless's build.rs, so have to use it locally.
+git = "https://github.com/yuanyuan2100/heapless.git"   #Added atmega328p to build.rs
+rev = "82f658ee1ea8c984b4f2d38c904d0f277daf5f2d"
 
 [dependencies.arduino-uno] # Set i2c functions to pub.
 git = "https://github.com/yuanyuan2100/avr-hal.git"
