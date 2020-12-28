@@ -1,4 +1,4 @@
-## A Very Rough Themometer Running on Rust AVR
+## A Very Rough Thermometer Running on Rust AVR
 ### Version 2 || 11-Dec-2020
 Updated to SHT30 Humidity and Temperature Sensor for a better accuracy and humidity measurement. The datasheet is here:
 [SHT30 Data-Sheet](https://www.sensirion.com/fileadmin/user_upload/customers/sensirion/Dokumente/2_Humidity_Sensors/Datasheets/Sensirion_Humidity_Sensors_SHT3x_Datasheet_digital.pdf). 
