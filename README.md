@@ -8,7 +8,7 @@ Also updated to 1602A keyboard shield.
 
 ------
 ### Version 1
-All parts and wiring are from Arduino Uno Starter Kit. The themal sensor in the kit is Analog Devices TMP36. The data-sheet of the sensor is here:
+All parts and wiring are from Arduino Uno Starter Kit. The thermal sensor in the kit is Analog Devices TMP36. The data-sheet of the sensor is here:
 [TMP36 Data-Sheet](https://www.analog.com/media/en/technical-documentation/data-sheets/TMP35_36_37.pdf).
 
-![alt text](https://github.com/yuanyuan2100/Arduino-Uno-Themometer/blob/master/arduino_thermometer.jpg?raw=true)
+![alt text](https://github.com/yuanyuan2100/Arduino-Uno-Thermometer-Rust/blob/master/arduino_thermometer.jpg?raw=true)
