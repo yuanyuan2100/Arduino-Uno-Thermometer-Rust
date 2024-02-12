@@ -1,8 +1,10 @@
 #![no_std]
 #![no_main]
 
-use arduino_uno::hal::i2c::Direction::Write;
-use arduino_uno::{prelude::*, Delay};
+// use arduino_hal::i2c::Direction::Write;
+use arduino_hal::hal::wdt;
+use arduino_hal::prelude::*;
+use arduino_hal::Delay;
 use hd44780_driver::{Cursor::*, CursorBlink, HD44780};
 
 use core::convert::TryInto;
@@ -14,40 +16,35 @@ const SHT30_ADDRESS: u8 = 0x44; // SHT3x datasheet Page 9, Table 7.
 const MEASURE_PERIODIC: [u8; 2] = [0x20, 0x32]; // Periodic Data Acquisition Mode. 0.5 mps. SHT3x datasheet Page 10, Table 9.
 const READOUT: [u8; 2] = [0xE0, 0x00]; // Periodic Data Acquisition Mode. Readout. SHT3x datasheet Page 11, Table 10.
 
-#[arduino_uno::entry]
+#[arduino_hal::entry]
 fn main() -> ! {
     // Initialize board and pins
-    let dp = arduino_uno::Peripherals::take().unwrap();
+    let dp = arduino_hal::Peripherals::take().unwrap();
 
-    let mut pins = arduino_uno::Pins::new(dp.PORTB, dp.PORTC, dp.PORTD);
-    let mut serial = arduino_uno::Serial::new(
-        dp.USART0,
-        pins.d0,
-        pins.d1.into_output(&mut pins.ddr),
-        57600.into_baudrate(),
-    );
+    let pins = arduino_hal::pins!(dp);
+    let mut serial = arduino_hal::default_serial!(dp, pins, 57600);
 
     // Initialize i2c
-    let mut i2c = arduino_uno::I2cMaster::new(
+    let mut i2c = arduino_hal::I2c::new(
         dp.TWI,
-        pins.a4.into_pull_up_input(&mut pins.ddr), // * SDA
-        pins.a5.into_pull_up_input(&mut pins.ddr), // SCL
+        pins.a4.into_pull_up_input(), // * SDA
+        pins.a5.into_pull_up_input(), // SCL
         50000,
     );
 
-    i2c.start(SHT30_ADDRESS, Write).unwrap(); // Initialize SHT30 sensor.
+    // i2c.start(SHT30_ADDRESS, Write).unwrap(); // Initialize SHT30 sensor.
     i2c.write(SHT30_ADDRESS, &MEASURE_PERIODIC).unwrap(); // Set measure mode.
 
     // Initialzie LCD.
     let mut delay = Delay::new();
 
     let mut lcd = HD44780::new_4bit(
-        pins.d8.into_output(&mut pins.ddr), // Register Select pin
-        pins.d9.into_output(&mut pins.ddr), // Enable pin
-        pins.d4.into_output(&mut pins.ddr), // d4
-        pins.d5.into_output(&mut pins.ddr), // d5
-        pins.d6.into_output(&mut pins.ddr), // d6
-        pins.d7.into_output(&mut pins.ddr), // d7
+        pins.d8.into_output(), // Register Select pin
+        pins.d9.into_output(), // Enable pin
+        pins.d4.into_output(), // d4
+        pins.d5.into_output(), // d5
+        pins.d6.into_output(), // d6
+        pins.d7.into_output(), // d7
         &mut delay,
     )
     .unwrap();
@@ -56,10 +53,14 @@ fn main() -> ! {
     lcd.set_cursor_visibility(Invisible, &mut delay).unwrap();
     lcd.set_cursor_blink(CursorBlink::Off, &mut delay).unwrap();
 
-    let mut led = pins.d13.into_output(&mut pins.ddr); // Blinking LED.
+    let mut led = pins.d13.into_output(); // Blinking LED.
+
+    // Watchdog.
+    let mut watchdog = wdt::Wdt::new(dp.WDT, &dp.CPU.mcusr);
+    watchdog.start(wdt::Timeout::Ms8000).unwrap();
 
     loop {
-        led.toggle().void_unwrap(); // Blinking LED.
+        led.toggle(); // Blinking LED.
 
         // Read measurement results. SHT3x datasheet Page 10, Table 9.
         let mut buffer = [0u8; 6];
@@ -95,7 +96,7 @@ fn main() -> ! {
                     temp_int,
                     temp_dec
                 )
-                .void_unwrap();
+                .unwrap();
             } else {
                 ufmt::uwriteln!(
                     &mut serial,
@@ -105,7 +106,7 @@ fn main() -> ! {
                     temp_int,
                     temp_dec
                 )
-                .void_unwrap();
+                .unwrap();
             }
         } else {
             if temp_dec < 10 {
@@ -117,7 +118,7 @@ fn main() -> ! {
                     temp_int,
                     temp_dec
                 )
-                .void_unwrap();
+                .unwrap();
             } else {
                 ufmt::uwriteln!(
                     &mut serial,
@@ -127,7 +128,7 @@ fn main() -> ! {
                     temp_int,
                     temp_dec
                 )
-                .void_unwrap();
+                .unwrap();
             }
         }
 
@@ -140,7 +141,7 @@ fn main() -> ! {
                 hum_int,
                 hum_dec
             )
-            .void_unwrap();
+            .unwrap();
         } else {
             ufmt::uwriteln!(
                 &mut serial,
@@ -150,7 +151,7 @@ fn main() -> ! {
                 hum_int,
                 hum_dec
             )
-            .void_unwrap();
+            .unwrap();
         }
 
         // Display on LCD.
@@ -160,7 +161,7 @@ fn main() -> ! {
         let mut display_line_1: String<U20> = String::new();
         let mut display_line_2: String<U20> = String::new();
 
-        display_line_1.push_str("T: ").unwrap();
+        display_line_1.push_str("TEM: ").unwrap();
 
         if temp < 0 {
             display_line_1.push_str("-").unwrap();
@@ -180,7 +181,7 @@ fn main() -> ! {
             .unwrap();
         display_line_1.push_str(" C").unwrap();
 
-        display_line_2.push_str("H: ").unwrap();
+        display_line_2.push_str("HUM: ").unwrap();
         display_line_2
             .push_str(hum_int.numtoa_str(10, &mut line_2))
             .unwrap();
@@ -199,8 +200,9 @@ fn main() -> ! {
         lcd.set_cursor_pos(40, &mut delay).unwrap(); // Go to line 2.
         lcd.write_str(&display_line_2, &mut delay).unwrap();
 
-        arduino_uno::delay_ms(4000);
+        arduino_hal::delay_ms(4000);
 
         lcd.clear(&mut delay).unwrap();
+        watchdog.feed();
     }
 }
