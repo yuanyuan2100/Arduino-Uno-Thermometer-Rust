@@ -8,14 +8,10 @@ edition = "2021"
 panic-halt = "0.2.0"
 hd44780-driver = {git = "https://github.com/JohnDoneth/hd44780-driver"}
 numtoa = "0.2.3"
-ufmt = "0.1.0"
+ufmt = "0.2.0"
 nb = "1.1.0"
 # arduino-hal = "0.1.0"
-embedded-hal = "1.0"
-
-# [dependencies.arduino-hal]
-# path = "../../Rust/avr-hal/"
-# features = ["arduino-uno"]
+embedded-hal = "0.2.3"
 
 [dependencies.heapless]
 git = "https://github.com/yuanyuan2100/heapless.git"   #Added atmega328p to build.rs
@@ -25,10 +21,6 @@ rev = "82f658ee1ea8c984b4f2d38c904d0f277daf5f2d"
 git = "https://github.com/yuanyuan2100/avr-hal.git"
 rev = "fbb8495ea4504055f52cae47b9bd240892c5cd47"
 features = ["arduino-uno"]
-
-# [dependencies.avr-hal-generic]
-# git = "https://github.com/yuanyuan2100/avr-hal.git"
-# rev = "d3a8352fb65d23a46044d2d844006d7cd7a73576"
 
 [profile.dev]
 panic = "abort"

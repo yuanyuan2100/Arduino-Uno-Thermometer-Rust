@@ -72,13 +72,13 @@ fn main() -> ! {
         let hum_msb = buffer[3]; // Humidity MSB
         let hum_lsb = buffer[4]; // Humidity LSB
 
-        let s_t: u32 = ((temp_msb as u16) * 256 + temp_lsb as u16).into(); // 16-bits temperature data.
+        let s_t: u16 = ((temp_msb as u16) << 8) | (temp_lsb as u16); // 16-bits temperature data.
         let temp: i16 = ((((s_t as i32) * 17500) >> 16) - 4500).try_into().unwrap(); // Temperature * 100 to get 2 digits decimal. SHT3x datasheet Page 13.
         let temp_int: u16 = ((temp / 100).abs()).try_into().unwrap(); // Integer part of temperature.
         let temp_dec: u16 = ((temp % 100).abs()).try_into().unwrap(); // Decimal part of temperature.
 
-        let s_rh: u32 = ((hum_msb as u16) * 256 + hum_lsb as u16).into(); // 16-bits humidity data.
-        let hum: u16 = ((s_rh * 10000) >> 16).try_into().unwrap();
+        let s_rh: u16 = (hum_msb as u16) << 8 | (hum_lsb as u16); // 16-bits humidity data.
+        let hum: u16 = ((s_rh as u32 * 10000) >> 16).try_into().unwrap();
         let hum_int: u16 = hum / 100;
         let hum_dec: u16 = hum % 100;
 

@@ -15,7 +15,6 @@
   "no-default-libraries": false,
   "os": "unknown",
   "no-builtins": false,
-  "no-compiler-rt": false,
   "position-independent-executables": false,
   "pre-link-args": {
     "gcc": [
