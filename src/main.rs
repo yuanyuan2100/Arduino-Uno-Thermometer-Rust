@@ -1,10 +1,7 @@
 #![no_std]
 #![no_main]
 
-// use arduino_hal::i2c::Direction::Write;
-use arduino_hal::hal::wdt;
-use arduino_hal::prelude::*;
-use arduino_hal::Delay;
+use arduino_hal::{hal::wdt,prelude::*,Delay};
 use hd44780_driver::{Cursor::*, CursorBlink, HD44780};
 
 use core::convert::TryInto;
@@ -32,8 +29,7 @@ fn main() -> ! {
         50000,
     );
 
-    // i2c.start(SHT30_ADDRESS, Write).unwrap(); // Initialize SHT30 sensor.
-    i2c.write(SHT30_ADDRESS, &MEASURE_PERIODIC).unwrap(); // Set measure mode.
+    i2c.write(SHT30_ADDRESS, &MEASURE_PERIODIC).unwrap(); // Set sensor to measure mode.
 
     // Initialzie LCD.
     let mut delay = Delay::new();
